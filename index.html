@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acto 1: El Dilema de las Vistas Imperfectas</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <main>
+        <section class="hero">
+            <h1>Acto 1: El Dilema de las Vistas Imperfectas</h1>
+            <div class="hero-content">
+                <p class="intro-large">
+                    En los sistemas recomendadores, uno de los mayores desafíos es la <strong>escasez de datos</strong> (sparse supervision).
+                </p>
+                <div class="intro-box">
+                    <p class="intro-detail">
+                        Tenemos <span class="highlight">millones</span> de posibles interacciones usuario-ítem,
+                        pero solo observamos una <span class="highlight">mínima fracción</span>.
+                    </p>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number">~1%</div>
+                            <div class="stat-label">Datos Observados</div>
+                        </div>
+                        <div class="stat-divider">vs</div>
+                        <div class="stat-item">
+                            <div class="stat-number">99%</div>
+                            <div class="stat-label">Desconocidos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-arrow">↓</div>
+        </section>
+
+        <section class="problem-demo">
+            <h2>El Problema: Demasiadas Incógnitas</h2>
+            <div class="demo-container">
+                <div class="demo-explanation">
+                    <p>
+                        Imagina una plataforma con 10 usuarios y 10 películas (100 combinaciones posibles).
+                        En realidad, solo observamos <strong>~10 interacciones</strong>. Las otras 90 son un misterio.
+                    </p>
+                    <p>
+                        <strong>El desafío:</strong> ¿Cómo entrenamos un modelo con tan pocas observaciones sin que
+                        simplemente <em>memorice</em> esas 10 interacciones específicas?
+                    </p>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-box observed"></div>
+                            <span>Interacción Observada</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-box unknown"></div>
+                            <span>Desconocido (¿Le gustará?)</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="matrix-viz" class="visualization-container"></div>
+            </div>
+        </section>
+
+        <section class="solution-demo">
+            <h2>La Solución: Aprendizaje Contrastivo</h2>
+            <div class="two-columns">
+                <div class="column-left">
+                    <p>
+                        El <strong>Graph Contrastive Learning (GCL)</strong> tiene una idea ingeniosa: crear múltiples
+                        "vistas" ligeramente alteradas de los datos observados.
+                    </p>
+                    <p>
+                        <strong>La analogía:</strong> Es como mostrarle al modelo la misma escena desde diferentes ángulos.
+                        El modelo aprende a identificar <em>qué se mantiene constante</em> (lo esencial) y qué cambia
+                        (variaciones irrelevantes).
+                    </p>
+                    <p>
+                        <strong>El beneficio:</strong> En lugar de memorizar "al Usuario 1 le gusta Dune", aprende
+                        "<em>los usuarios que leen ciencia ficción clásica tienden a gustar de space opera</em>".
+                        Esto generaliza mejor a las 90 interacciones nunca vistas.
+                    </p>
+                    <div class="controls">
+                        <button id="btn-show-augmentation" class="btn-primary">Mostrar Vistas Contrastivas</button>
+                        <button id="btn-reset-augmentation" class="btn-secondary">Reset</button>
+                    </div>
+                </div>
+                <div class="column-right">
+                    <div id="augmentation-viz" class="visualization-container"></div>
+                    <p id="augmentation-status" class="status-text"></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="key-insight">
+            <h2>La Clave: Aprender la Esencia, No Memorizar</h2>
+            <div class="insight-content">
+                <div class="analogy-box">
+                    <h3>🧠 La Analogía: Reconociendo a un Amigo</h3>
+                    <p>
+                        Imagina que tu modelo es un bebé aprendiendo a reconocer a tu amigo "Alex". Le muestras estas fotos:
+                    </p>
+                    <div id="alex-photos" class="photos-container">
+                        <!-- Will be populated by JS -->
+                    </div>
+                    <div class="controls">
+                        <button id="btn-show-essence" class="btn-primary">¿Qué aprende el modelo?</button>
+                        <button id="btn-reset-essence" class="btn-secondary">Reset</button>
+                    </div>
+                    <p id="essence-status" class="essence-explanation"></p>
+                </div>
+
+                <div class="insight-explanation">
+                    <div class="key-point good-lie">
+                        <h4>✅ "Mentira Buena" (Aumentación Válida)</h4>
+                        <p>
+                            Como la foto con bigote de Alex: <strong>altera la vista, pero la esencia es reconocible</strong>.
+                            La tarea (reconocer a Alex) sigue siendo posible. El modelo aprende a ignorar variaciones
+                            irrelevantes (bigote, luz, anteojos) y a concentrarse en lo inmutable (estructura de la cara).
+                        </p>
+                        <p class="benefit">
+                            <strong>Ganancia:</strong> El modelo pasa de "memorizar la foto" a "entender la cara".
+                            Aprende GENERALIZACIÓN.
+                        </p>
+                    </div>
+
+                    <div class="key-point bad-lie">
+                        <h4>❌ "Mentira Mala" (Aumentación Destructiva)</h4>
+                        <p>
+                            Como ponerle a la foto de Alex la cara de otra persona: <strong>la esencia se destruye</strong>.
+                            La tarea se vuelve imposible. El modelo aprende algo incorrecto o se confunde.
+                        </p>
+                        <p class="danger">
+                            <strong>Riesgo:</strong> El modelo aprende patrones falsos que arruinan las predicciones.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="connection-box">
+                <h3>🔗 Conexión con Sistemas Recomendadores</h3>
+                <div class="connection-grid">
+                    <div class="connection-item">
+                        <div class="connection-icon">📊</div>
+                        <h4>Aumento de Estructura</h4>
+                        <p>
+                            Eliminar aristas es como ver a Alex de perfil: a veces es una "mentira buena".
+                            <strong>Pero cuando rompe caminos críticos</strong>, es como borrarle la nariz a Alex en la foto.
+                            ¿Sigue siendo él?
+                        </p>
+                    </div>
+                    <div class="connection-item">
+                        <div class="connection-icon">🎭</div>
+                        <h4>Aumento de Features</h4>
+                        <p>
+                            Añadir ruido es como desenfocar la foto. Para el <strong>Power User</strong> (foto nítida),
+                            un poco de desenfoque no importa. Para el <strong>Usuario Long Tail</strong> (foto ya borrosa),
+                            el mismo desenfoque lo hace irreconocible.
+                        </p>
+                    </div>
+                </div>
+                <p class="connection-summary">
+                    <strong>La pregunta crítica:</strong> ¿Nuestros métodos crean "mentiras buenas" que fuerzan
+                    al modelo a aprender mejor, o "mentiras malas" que lo sabotean?
+                </p>
+            </div>
+        </section>
+
+        <section class="question-section">
+            <div class="question-box">
+                <h2>🔍 Investiguemos a los Sospechosos</h2>
+                <p>
+                    Los métodos tradicionales tienen dos "sospechosos habituales". Veamos si son inocentes
+                    (crean "mentiras buenas") o culpables (crean "mentiras malas" que arruinan las recomendaciones).
+                </p>
+            </div>
+        </section>
+
+        <section class="suspect">
+            <h2>Primer Sospechoso: El Sabotaje de Señales Colaborativas</h2>
+            <div class="two-columns">
+                <div class="column-left">
+                    <p>
+                        El <strong>Aumento de Estructura</strong> elimina conexiones al azar. En teoría, esto enseña al modelo
+                        a ser robusto. Pero en la práctica, puede ser un acto de sabotaje a la señal colaborativa.
+                    </p>
+                    <p>
+                        Los recomendadores basados en grafos funcionan porque asumen que <em>"si a un usuario A le gusta lo mismo
+                        que al usuario B, entonces a A probablemente le gustará otras cosas que le gustan a B"</em>. Esta lógica
+                        depende de que existan caminos en el grafo que conecten a los usuarios a través de ítems en común.
+                    </p>
+                    <p>
+                        <strong>El problema:</strong> Si eliminamos una arista al azar, podemos romper un camino crítico y,
+                        con ello, perder una recomendación valiosa. Veamos cómo sucede.
+                    </p>
+                </div>
+                <div class="column-right">
+                    <div id="graph-viz" class="visualization-container"></div>
+                    <div class="controls">
+                        <button id="btn-augment" class="btn-primary">Simular Aumento de Estructura</button>
+                        <button id="btn-reset-graph" class="btn-secondary">Reset</button>
+                    </div>
+                    <p class="conclusion">
+                        <strong>La recomendación ha desaparecido.</strong> Al eliminar una sola conexión "al azar", hemos saboteado
+                        la señal colaborativa que permitía al modelo descubrir "Fundación" para el Usuario 1. Este es el peligro real
+                        de la aumentación de estructura: no es robustez, <strong>es un riesgo de ceguera</strong>.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="suspect">
+            <h2>Segundo Sospechoso: La Confusión de Identidad</h2>
+            <div class="two-columns">
+                <div class="column-left">
+                    <p>
+                        El <strong>Aumento de Features</strong> añade ruido a la representación de cada nodo. A diferencia del
+                        método anterior, no rompe la estructura. Pero comete un error de juicio: trata a todos por igual.
+                    </p>
+                    <p>
+                        Imagina que el espacio de embeddings representa un mapa de gustos (ej. géneros de películas). Un
+                        <strong>Power User</strong> (muy activo, con cientos de interacciones) tiene una identidad bien definida
+                        y estable en ese mapa. Un <strong>Usuario Long Tail</strong> (nuevo, con pocas interacciones) tiene una
+                        identidad frágil.
+                    </p>
+                    <p>
+                        <strong>El problema:</strong> Aplicar el mismo "empujón" (ruido) a ambos es peligroso: el usuario de la
+                        long tail puede ser empujado a una zona de gustos completamente errónea, confundiendo al modelo sobre quién
+                        es realmente.
+                    </p>
+                    <p class="conclusion">
+                        <strong>Arrastra el slider.</strong> Observa cómo el <strong>Power User</strong> se mantiene estable en
+                        "Ciencia Ficción", su identidad es robusta gracias a sus muchas interacciones. Sin embargo, el
+                        <strong>Usuario Long Tail</strong> es empujado constantemente a "Comedia". Para el modelo, este usuario
+                        es ahora una mezcla confusa de ambos géneros. El ruido de "talla única" no ha hecho más robusto al modelo,
+                        <strong>lo ha hecho confundirse</strong> sobre la identidad de sus usuarios más vulnerables.
+                    </p>
+                </div>
+                <div class="column-right">
+                    <div id="scatter-viz" class="visualization-container"></div>
+                    <div class="controls">
+                        <label for="noise-slider">Nivel de Ruido (ε): <span id="noise-value">0</span></label>
+                        <input type="range" id="noise-slider" min="0" max="100" value="0">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="transition">
+            <p>
+                Como hemos visto, los métodos actuales son o muy brutos o muy ingenuos. Necesitamos una forma de crear
+                vistas de contraste que sea <strong>respetuosa con la estructura del grafo</strong> y, al mismo tiempo,
+                <strong>adaptativa a las características de cada nodo</strong>. ¿Es posible? Aquí es donde entra en juego
+                la propuesta de <strong>VGCL</strong>.
+            </p>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
