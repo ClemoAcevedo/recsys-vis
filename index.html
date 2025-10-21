@@ -8,151 +8,189 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
+    <!-- Progress Indicator -->
+    <div class="progress-indicator" id="progress-indicator">
+        <!-- Dots will be added by JS -->
+    </div>
+
+    <!-- Navigation Hint -->
+    <div class="nav-hint">Usa ← → o scroll para navegar</div>
+
     <main>
-        <section class="hero">
-            <h1>Acto 1: El Dilema de las Vistas Imperfectas</h1>
-            <div class="hero-content">
-                <p class="intro-large">
+        <!-- ========================================
+             SLIDE 1: Hero + Stats
+             ======================================== -->
+        <section class="slide slide-1" data-slide="1">
+            <div class="slide-center">
+                <h1 class="hero-title">Acto 1: El Dilema de las Vistas Imperfectas</h1>
+
+                <p class="hero-intro">
                     En los sistemas recomendadores, uno de los mayores desafíos es la <strong>escasez de datos</strong> (sparse supervision).
                 </p>
-                <div class="intro-box">
-                    <p class="intro-detail">
-                        Tenemos <span class="highlight">millones</span> de posibles interacciones usuario-ítem,
-                        pero solo observamos una <span class="highlight">mínima fracción</span>.
-                    </p>
-                    <div class="stats">
-                        <div class="stat-item">
-                            <div class="stat-number">~1%</div>
-                            <div class="stat-label">Datos Observados</div>
-                        </div>
-                        <div class="stat-divider">vs</div>
-                        <div class="stat-item">
-                            <div class="stat-number">99%</div>
-                            <div class="stat-label">Desconocidos</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="hero-arrow">↓</div>
-        </section>
 
-        <section class="problem-demo">
-            <h2>El Problema: Demasiadas Incógnitas</h2>
-            <div class="demo-container">
-                <div class="demo-explanation">
-                    <p>
-                        Imagina una plataforma con 10 usuarios y 10 películas (100 combinaciones posibles).
-                        En realidad, solo observamos <strong>~10 interacciones</strong>. Las otras 90 son un misterio.
-                    </p>
-                    <p>
-                        <strong>El desafío:</strong> ¿Cómo entrenamos un modelo con tan pocas observaciones sin que
-                        simplemente <em>memorice</em> esas 10 interacciones específicas?
-                    </p>
-                    <div class="legend">
-                        <div class="legend-item">
-                            <div class="legend-box observed"></div>
-                            <span>Interacción Observada</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-box unknown"></div>
-                            <span>Desconocido (¿Le gustará?)</span>
-                        </div>
+                <div class="stats-large">
+                    <div class="stat-card observed">
+                        <div class="stat-number">~1%</div>
+                        <div class="stat-label">Datos Observados</div>
+                    </div>
+                    <div class="stat-divider">vs</div>
+                    <div class="stat-card unknown">
+                        <div class="stat-number">99%</div>
+                        <div class="stat-label">Desconocidos</div>
                     </div>
                 </div>
-                <div id="matrix-viz" class="visualization-container"></div>
+
+                <p class="hero-detail">
+                    Tenemos <span class="highlight">millones</span> de posibles interacciones usuario-ítem,
+                    pero solo observamos una <span class="highlight">mínima fracción</span>.
+                </p>
             </div>
         </section>
 
-        <section class="solution-demo">
-            <h2>La Solución: Aprendizaje Contrastivo</h2>
-            <div class="two-columns">
-                <div class="column-left">
-                    <p>
-                        El <strong>Graph Contrastive Learning (GCL)</strong> tiene una idea ingeniosa: crear múltiples
-                        "vistas" ligeramente alteradas de los datos observados.
-                    </p>
-                    <p>
-                        <strong>La analogía:</strong> Es como mostrarle al modelo la misma escena desde diferentes ángulos.
-                        El modelo aprende a identificar <em>qué se mantiene constante</em> (lo esencial) y qué cambia
-                        (variaciones irrelevantes).
-                    </p>
-                    <p>
-                        <strong>El beneficio:</strong> En lugar de memorizar "al Usuario 1 le gusta Dune", aprende
-                        "<em>los usuarios que leen ciencia ficción clásica tienden a gustar de space opera</em>".
-                        Esto generaliza mejor a las 90 interacciones nunca vistas.
-                    </p>
-                    <div class="controls">
-                        <button id="btn-show-augmentation" class="btn-primary">Mostrar Vistas Contrastivas</button>
-                        <button id="btn-reset-augmentation" class="btn-secondary">Reset</button>
-                    </div>
-                </div>
-                <div class="column-right">
-                    <div id="augmentation-viz" class="visualization-container"></div>
-                    <p id="augmentation-status" class="status-text"></p>
-                </div>
-            </div>
-        </section>
+        <!-- ========================================
+             SLIDE 2: Problema + Matriz
+             ======================================== -->
+        <section class="slide slide-2" data-slide="2">
+            <div class="slide-center">
+                <h2 class="slide-title">El Problema: Demasiadas Incógnitas</h2>
 
-        <section class="key-insight">
-            <h2>La Clave: Aprender la Esencia, No Memorizar</h2>
-            <div class="insight-content">
-                <div class="analogy-box">
-                    <h3>🧠 La Analogía: Reconociendo a un Amigo</h3>
-                    <p>
-                        Imagina que tu modelo es un bebé aprendiendo a reconocer a tu amigo "Alex". Le muestras estas fotos:
-                    </p>
-                    <div id="alex-photos" class="photos-container">
-                        <!-- Will be populated by JS -->
-                    </div>
-                    <div class="controls">
-                        <button id="btn-show-essence" class="btn-primary">¿Qué aprende el modelo?</button>
-                        <button id="btn-reset-essence" class="btn-secondary">Reset</button>
-                    </div>
-                    <p id="essence-status" class="essence-explanation"></p>
-                </div>
-
-                <div class="insight-explanation">
-                    <div class="key-point good-lie">
-                        <h4>✅ "Mentira Buena" (Aumentación Válida)</h4>
+                <div class="viz-with-explanation">
+                    <div class="explanation-box">
                         <p>
-                            Como la foto con bigote de Alex: <strong>altera la vista, pero la esencia es reconocible</strong>.
-                            La tarea (reconocer a Alex) sigue siendo posible. El modelo aprende a ignorar variaciones
-                            irrelevantes (bigote, luz, anteojos) y a concentrarse en lo inmutable (estructura de la cara).
+                            Imagina una plataforma con <strong>20 usuarios y 20 películas</strong>
+                            (400 combinaciones posibles).
                         </p>
-                        <p class="benefit">
-                            <strong>Ganancia:</strong> El modelo pasa de "memorizar la foto" a "entender la cara".
-                            Aprende GENERALIZACIÓN.
+                        <p>
+                            En realidad, solo observamos <strong>~5 interacciones</strong>
+                            (≈1% del total). Las otras 395 son un misterio.
                         </p>
+                        <div class="legend-horizontal">
+                            <div class="legend-item">
+                                <div class="legend-box observed"></div>
+                                <span>Interacción Observada</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-box unknown"></div>
+                                <span>Desconocido</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="key-point bad-lie">
-                        <h4>❌ "Mentira Mala" (Aumentación Destructiva)</h4>
-                        <p>
-                            Como ponerle a la foto de Alex la cara de otra persona: <strong>la esencia se destruye</strong>.
-                            La tarea se vuelve imposible. El modelo aprende algo incorrecto o se confunde.
+                    <div id="matrix-viz" class="visualization-container"></div>
+                </div>
+
+                <div class="footer-box">
+                    <p><strong>El desafío:</strong> ¿Cómo entrenar un modelo con tan pocas observaciones sin que memorice?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             SLIDE 3: GCL + Analogía Alex Completa
+             ======================================== -->
+        <section class="slide slide-3" data-slide="3">
+            <div class="slide-center">
+                <h2 class="slide-title">La Clave: Aprender la Esencia, No Memorizar</h2>
+
+                <div class="analogy-layout">
+                    <div class="analogy-section">
+                        <h3 class="analogy-title">🧠 La Analogía: Reconociendo a un Amigo</h3>
+                        <p class="analogy-intro">
+                            Imagina que tu modelo es un bebé aprendiendo a reconocer a tu amigo "Alex". Le muestras estas fotos:
                         </p>
-                        <p class="danger">
-                            <strong>Riesgo:</strong> El modelo aprende patrones falsos que arruinan las predicciones.
-                        </p>
+
+                        <div id="alex-photos" class="photos-container-large"></div>
+
+                        <div class="controls">
+                            <button id="btn-show-essence" class="btn-primary">¿Qué aprende el modelo?</button>
+                            <button id="btn-reset-essence" class="btn-secondary">Reset</button>
+                        </div>
+                        <p id="essence-status" class="essence-explanation"></p>
+                    </div>
+
+                    <div class="concept-column">
+                        <div class="concept-box good">
+                            <h3>✅ "Mentira Buena"</h3>
+                            <p>
+                                Como la foto con bigote de Alex: <strong>altera la vista, pero la esencia es reconocible</strong>.
+                                El modelo aprende GENERALIZACIÓN.
+                            </p>
+                        </div>
+
+                        <div class="concept-box bad">
+                            <div class="concept-visual">
+                                <svg viewBox="0 0 120 120" class="concept-face" role="img" aria-label="Alex con los ojos tachados">
+                                    <circle cx="60" cy="60" r="52" fill="#fee2e2" stroke="#ef4444" stroke-width="4"></circle>
+                                    <line x1="38" y1="42" x2="52" y2="56" stroke="#b91c1c" stroke-width="6" stroke-linecap="round"></line>
+                                    <line x1="52" y1="42" x2="38" y2="56" stroke="#b91c1c" stroke-width="6" stroke-linecap="round"></line>
+                                    <line x1="68" y1="42" x2="82" y2="56" stroke="#b91c1c" stroke-width="6" stroke-linecap="round"></line>
+                                    <line x1="82" y1="42" x2="68" y2="56" stroke="#b91c1c" stroke-width="6" stroke-linecap="round"></line>
+                                    <path d="M38 82 Q60 68 82 82" stroke="#991b1b" stroke-width="5" fill="none" stroke-linecap="round"></path>
+                                </svg>
+                            </div>
+                            <h3>❌ "Mentira Mala"</h3>
+                            <p>
+                                Como borrarle los ojos a Alex: <strong>la esencia se destruye</strong>.
+                                El modelo aprende patrones falsos.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="connection-box">
-                <h3>🔗 Conexión con Sistemas Recomendadores</h3>
-                <div class="connection-grid">
-                    <div class="connection-item">
-                        <div class="connection-icon">📊</div>
-                        <h4>Aumento de Estructura</h4>
+        <!-- ========================================
+             SLIDE 4: El Motor InfoNCE
+             ======================================== -->
+        <section class="slide slide-4" data-slide="4">
+            <div class="slide-center">
+                <h2 class="slide-title">El Motor: InfoNCE</h2>
+
+                <div class="infonce-card">
+                    <p>
+                        El corazón del entrenamiento contrastivo es <strong>InfoNCE</strong>:
+                        compara múltiples vistas del mismo nodo y refuerza lo que permanece estable.
+                    </p>
+                </div>
+
+                <div class="infonce-points">
+                    <div class="infonce-point">
+                        <span class="point-icon">🧲</span>
+                        <p><strong>Atrae positivos:</strong> aproxima representaciones del mismo usuario-ítem en vistas distintas.</p>
+                    </div>
+                    <div class="infonce-point">
+                        <span class="point-icon">🚫</span>
+                        <p><strong>Repele negativos:</strong> empuja lejos los nodos que no comparten identidad.</p>
+                    </div>
+                    <div class="infonce-point">
+                        <span class="point-icon">🧪</span>
+                        <p>Funciona <strong>solo si</strong> las vistas conservan la esencia. Por eso necesitamos "mentiras buenas".</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             SLIDE 5: Conexión con Recomendadores
+             ======================================== -->
+        <section class="slide slide-5" data-slide="5">
+            <div class="slide-center">
+                <h2 class="slide-title">🔗 Conexión con Sistemas Recomendadores</h2>
+
+                <div class="connection-cards">
+                    <div class="connection-card">
+                        <div class="card-icon">📊</div>
+                        <h3>Aumento de Estructura</h3>
                         <p>
                             Eliminar aristas es como ver a Alex de perfil: a veces es una "mentira buena".
-                            <strong>Pero cuando rompe caminos críticos</strong>, es como borrarle la nariz a Alex en la foto.
+                            <strong>Pero cuando rompe caminos críticos</strong>, es como borrarle la nariz a Alex.
                             ¿Sigue siendo él?
                         </p>
                     </div>
-                    <div class="connection-item">
-                        <div class="connection-icon">🎭</div>
-                        <h4>Aumento de Features</h4>
+
+                    <div class="connection-card">
+                        <div class="card-icon">🎭</div>
+                        <h3>Aumento de Features</h3>
                         <p>
                             Añadir ruido es como desenfocar la foto. Para el <strong>Power User</strong> (foto nítida),
                             un poco de desenfoque no importa. Para el <strong>Usuario Long Tail</strong> (foto ya borrosa),
@@ -160,100 +198,213 @@
                         </p>
                     </div>
                 </div>
-                <p class="connection-summary">
-                    <strong>La pregunta crítica:</strong> ¿Nuestros métodos crean "mentiras buenas" que fuerzan
-                    al modelo a aprender mejor, o "mentiras malas" que lo sabotean?
-                </p>
-            </div>
-        </section>
 
-        <section class="question-section">
-            <div class="question-box">
-                <h2>🔍 Investiguemos a los Sospechosos</h2>
-                <p>
-                    Los métodos tradicionales tienen dos "sospechosos habituales". Veamos si son inocentes
-                    (crean "mentiras buenas") o culpables (crean "mentiras malas" que arruinan las recomendaciones).
-                </p>
-            </div>
-        </section>
-
-        <section class="suspect">
-            <h2>Primer Sospechoso: El Sabotaje de Señales Colaborativas</h2>
-            <div class="two-columns">
-                <div class="column-left">
+                <div class="infonce-highlight">
                     <p>
-                        El <strong>Aumento de Estructura</strong> elimina conexiones al azar. En teoría, esto enseña al modelo
-                        a ser robusto. Pero en la práctica, puede ser un acto de sabotaje a la señal colaborativa.
-                    </p>
-                    <p>
-                        Los recomendadores basados en grafos funcionan porque asumen que <em>"si a un usuario A le gusta lo mismo
-                        que al usuario B, entonces a A probablemente le gustará otras cosas que le gustan a B"</em>. Esta lógica
-                        depende de que existan caminos en el grafo que conecten a los usuarios a través de ítems en común.
-                    </p>
-                    <p>
-                        <strong>El problema:</strong> Si eliminamos una arista al azar, podemos romper un camino crítico y,
-                        con ello, perder una recomendación valiosa. Veamos cómo sucede.
+                        <strong>El motor:</strong> <strong>InfoNCE</strong> — atrae positivos (vistas del mismo nodo),
+                        repele negativos (vistas de otros nodos).
                     </p>
                 </div>
-                <div class="column-right">
-                    <div id="graph-viz" class="visualization-container"></div>
-                    <div class="controls">
-                        <button id="btn-augment" class="btn-primary">Simular Aumento de Estructura</button>
-                        <button id="btn-reset-graph" class="btn-secondary">Reset</button>
+
+                <div class="critical-question">
+                    <strong>La pregunta crítica:</strong> ¿Nuestros métodos crean "mentiras buenas"
+                    o "mentiras malas" que sabotean el modelo?
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             SLIDE 6: Transición - El Problema Real
+             ======================================== -->
+        <section class="slide slide-6" data-slide="6">
+            <div class="slide-center">
+                <h2 class="slide-title">El Problema: Las "Mentiras Malas"</h2>
+
+                <div class="impact-statement danger">
+                    <p>
+                        Este mecanismo es poderoso. Pero tiene un <strong>supuesto ingenuo</strong>:
+                        asume que las vistas que creamos son "mentiras buenas".
+                    </p>
+                </div>
+
+                <div class="impact-statement critical">
+                    <p>
+                        ¿Pero qué pasa si son <strong>"mentiras malas"</strong>?
+                    </p>
+                    <p>
+                        ¿Qué pasa si, en lugar de ponerle un bigote a Alex, <strong>le borramos los ojos</strong>?
+                    </p>
+                </div>
+
+                <div class="investigation-box">
+                    <h3>🔍 Investiguemos a los Sospechosos</h3>
+                    <p>
+                        Los métodos tradicionales tienen dos "sospechosos habituales".
+                        Veamos si son inocentes (crean "mentiras buenas") o culpables
+                        (crean "mentiras malas" que arruinan las recomendaciones).
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             SLIDE 7: Sospechoso 1 - SGL
+             ======================================== -->
+        <section class="slide slide-7" data-slide="7">
+            <div class="slide-center">
+                <h2 class="slide-title">Sospechoso 1: Sabotaje Estructural (SGL)</h2>
+
+                <div class="suspect-layout">
+                    <div class="suspect-explanation">
+                        <p>
+                            El <strong>Aumento de Estructura</strong> elimina conexiones al azar.
+                            Pero el dropout aleatorio <strong>no sabe qué aristas son vitales</strong>.
+                        </p>
+                        <p>
+                            Puede borrar una conexión crítica y, con ello,
+                            <strong>la señal colaborativa desaparece</strong>.
+                        </p>
+                        <div class="paper-quote">
+                            "Destruye la naturaleza intrínseca del grafo"
+                        </div>
+                        <p class="conclusion-text">
+                            No estamos haciendo el modelo más robusto,
+                            <strong>estamos saboteando la señal</strong>.
+                        </p>
                     </div>
-                    <p class="conclusion">
-                        <strong>La recomendación ha desaparecido.</strong> Al eliminar una sola conexión "al azar", hemos saboteado
-                        la señal colaborativa que permitía al modelo descubrir "Fundación" para el Usuario 1. Este es el peligro real
-                        de la aumentación de estructura: no es robustez, <strong>es un riesgo de ceguera</strong>.
-                    </p>
-                </div>
-            </div>
-        </section>
 
-        <section class="suspect">
-            <h2>Segundo Sospechoso: La Confusión de Identidad</h2>
-            <div class="two-columns">
-                <div class="column-left">
-                    <p>
-                        El <strong>Aumento de Features</strong> añade ruido a la representación de cada nodo. A diferencia del
-                        método anterior, no rompe la estructura. Pero comete un error de juicio: trata a todos por igual.
-                    </p>
-                    <p>
-                        Imagina que el espacio de embeddings representa un mapa de gustos (ej. géneros de películas). Un
-                        <strong>Power User</strong> (muy activo, con cientos de interacciones) tiene una identidad bien definida
-                        y estable en ese mapa. Un <strong>Usuario Long Tail</strong> (nuevo, con pocas interacciones) tiene una
-                        identidad frágil.
-                    </p>
-                    <p>
-                        <strong>El problema:</strong> Aplicar el mismo "empujón" (ruido) a ambos es peligroso: el usuario de la
-                        long tail puede ser empujado a una zona de gustos completamente errónea, confundiendo al modelo sobre quién
-                        es realmente.
-                    </p>
-                    <p class="conclusion">
-                        <strong>Arrastra el slider.</strong> Observa cómo el <strong>Power User</strong> se mantiene estable en
-                        "Ciencia Ficción", su identidad es robusta gracias a sus muchas interacciones. Sin embargo, el
-                        <strong>Usuario Long Tail</strong> es empujado constantemente a "Comedia". Para el modelo, este usuario
-                        es ahora una mezcla confusa de ambos géneros. El ruido de "talla única" no ha hecho más robusto al modelo,
-                        <strong>lo ha hecho confundirse</strong> sobre la identidad de sus usuarios más vulnerables.
-                    </p>
-                </div>
-                <div class="column-right">
-                    <div id="scatter-viz" class="visualization-container"></div>
-                    <div class="controls">
-                        <label for="noise-slider">Nivel de Ruido (ε): <span id="noise-value">0</span></label>
-                        <input type="range" id="noise-slider" min="0" max="100" value="0">
+                    <div class="suspect-viz">
+                        <div id="graph-viz" class="visualization-container"></div>
+                        <div class="controls">
+                            <button id="btn-augment" class="btn-primary">Simular Aumento de Estructura</button>
+                            <button id="btn-reset-graph" class="btn-secondary">Reset</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="transition">
-            <p>
-                Como hemos visto, los métodos actuales son o muy brutos o muy ingenuos. Necesitamos una forma de crear
-                vistas de contraste que sea <strong>respetuosa con la estructura del grafo</strong> y, al mismo tiempo,
-                <strong>adaptativa a las características de cada nodo</strong>. ¿Es posible? Aquí es donde entra en juego
-                la propuesta de <strong>VGCL</strong>.
-            </p>
+        <!-- ========================================
+             SLIDE 8: Sospechoso 2 - SimGCL
+             ======================================== -->
+        <section class="slide slide-8" data-slide="8">
+            <div class="slide-center">
+                <h2 class="slide-title">Sospechoso 2: Confusión de Identidad (SimGCL)</h2>
+
+                <div class="suspect-layout">
+                    <div class="suspect-explanation">
+                        <p>
+                            El <strong>Aumento de Features</strong> (SimGCL) aplica un ruido de
+                            <strong>"talla única"</strong> a todos los nodos por igual.
+                        </p>
+                        <p>
+                            <strong>El problema:</strong> El Power User apenas lo nota,
+                            pero el Usuario Long Tail puede ser empujado a una zona de gustos
+                            completamente errónea.
+                        </p>
+                        <div class="paper-quote">
+                            "Ignora las características únicas de los nodos"
+                        </div>
+                        <p class="instruction-text">
+                            <strong>Arrastra el slider</strong> y observa cómo el Power User
+                            se mantiene estable pero el Long Tail se desplaza.
+                        </p>
+                    </div>
+
+                    <div class="suspect-viz">
+                        <div id="scatter-viz" class="visualization-container"></div>
+                        <div class="controls">
+                            <button class="btn-icon" id="noise-decrease" aria-label="Disminuir ruido">▼</button>
+                            <label for="noise-slider" class="noise-slider-label">
+                                Nivel de Ruido (ε): <span id="noise-value">0</span>
+                                <input type="range" id="noise-slider" min="0" max="100" value="0">
+                            </label>
+                            <button class="btn-icon" id="noise-increase" aria-label="Aumentar ruido">▲</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             SLIDE 9: El Veredicto
+             ======================================== -->
+        <section class="slide slide-9" data-slide="9">
+            <div class="slide-center">
+                <h2 class="slide-title">El Veredicto</h2>
+
+                <div class="verdict-statement">
+                    <p>
+                        Los métodos de GCL actuales son <strong>fundamentalmente defectuosos</strong>.
+                    </p>
+                    <p>
+                        O destruyen información estructural (SGL), o aplican ruido uniforme
+                        que ignora las características de cada nodo (SimGCL).
+                    </p>
+                </div>
+
+                <h3 class="questions-header">Las Dos Preguntas Críticas:</h3>
+
+                <div class="critical-questions-list">
+                    <div class="question-card">
+                        <span class="q-icon">💡</span>
+                        <p>
+                            ¿Podemos <strong>generar</strong> una vista inteligente
+                            que conserve la esencia, en lugar de destruir el grafo?
+                        </p>
+                    </div>
+
+                    <div class="question-card">
+                        <span class="q-icon">🎯</span>
+                        <p>
+                            ¿Podemos aprender un ruido <strong>adaptativo y personalizado</strong>
+                            para cada nodo, en lugar de "talla única"?
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================
+             SLIDE 10: La Propuesta - VGCL
+             ======================================== -->
+        <section class="slide slide-10" data-slide="10">
+            <div class="slide-center">
+                <h2 class="slide-title">La Propuesta: VGCL</h2>
+
+                <div class="vgcl-main-box">
+                    <p class="vgcl-name">
+                        <strong>VGCL</strong><br>
+                        <span class="vgcl-subtitle">(Variational Graph Contrastive Learning)</span>
+                    </p>
+                </div>
+
+                <div class="vgcl-explanation">
+                    <p>
+                        Necesitamos una forma de crear vistas de contraste que sea:
+                    </p>
+                </div>
+
+                <div class="vgcl-features">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <h3>Respetuosa con la Estructura</h3>
+                        <p>
+                            En lugar de <strong>destruir</strong> el grafo al azar,
+                            <strong>generar</strong> una vista inteligente que conserve la esencia.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Adaptativa a Cada Nodo</h3>
+                        <p>
+                            En lugar de ruido de "talla única",
+                            aprender un ruido <strong>personalizado</strong> para cada nodo.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 

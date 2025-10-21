@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Mecanismo Interno</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            background: white;
+            overflow-y: scroll;
+        }
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        section {
+            scroll-snap-align: none;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Nueva Sección: Mecanismo Interno -->
+        <section class="mechanism-section deep-dive-section">
+            <h2>🔬 El Mecanismo Interno: Cómo Funcionan las "Mentiras"</h2>
+            <div class="mechanism-content">
+                <div class="intro-mechanism">
+                    <p>
+                        Antes de investigar si estos métodos funcionan, entendamos <strong>exactamente</strong> qué están haciendo.
+                        Ambos métodos crean "mentiras" diseñadas para forzar al GNN a producir dos embeddings ligeramente diferentes
+                        para el mismo nodo.
+                    </p>
+                </div>
+
+                <div class="mechanism-flow">
+                    <h3>El Flujo Completo</h3>
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Crear las "Mentiras"</h4>
+                            <p>Los métodos alteran el grafo de dos formas distintas, creando dos vistas: Vista 1 ($e'$) y Vista 2 ($e''$)</p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Comparar con InfoNCE</h4>
+                            <p>La fórmula InfoNCE le dice al modelo: <em>"¡Oye! Sé que estas dos coordenadas vinieron del mismo nodo, así que muévelas para que vuelvan a estar juntas. Y aléjalas de las coordenadas de todos los demás nodos"</em></p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Aprender la Esencia</h4>
+                            <p>Este proceso de "dañar y reparar" (o "mentir y corregir") obliga al modelo a aprender qué información es esencial (la que sobrevive a la "mentira") y qué es ruido (la propia "mentira")</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Método 1: Aumentación Estructural -->
+                <div class="method-deep-dive structural-method">
+                    <h3>✂️ Método 1: Aumentación Estructural (Borrar Aristas)</h3>
+
+                    <div class="method-explanation">
+                        <p class="method-intro">
+                            Este método crea vistas alterando la <strong>Matriz de Adyacencia</strong> ($A$) del grafo.
+                            Recuerda que un GNN calcula el nuevo embedding de un nodo promediando los embeddings de sus vecinos.
+                        </p>
+
+                        <div class="key-insight-box">
+                            <p>
+                                <strong>💡 Clave:</strong> El modelo no ve dibujos, ve una matriz donde $A[i, j] = 1$ si el nodo $i$ está
+                                conectado a $j$, y $0$ si no. "Borrar una arista" es simplemente cambiar un $1$ por un $0$ en esa matriz.
+                            </p>
+                        </div>
+
+                        <div class="numerical-breakdown">
+                            <h4>📊 Desglose Numérico</h4>
+
+                            <div class="vista-container">
+                                <div class="vista vista-1">
+                                    <h5>Vista 1 ($A'$ - Original con algunas aristas borradas)</h5>
+                                    <div class="vista-content">
+                                        <p><strong>Estado del grafo:</strong> Tu Usuario_1 está conectado a {Item_A, Item_B, Item_C}</p>
+                                        <p class="calculation">
+                                            <strong>Cálculo GNN:</strong><br>
+                                            El nuevo embedding del Usuario_1 ($e'$) será:<br>
+                                            $$e' \approx \text{Promedio}(\text{Emb}(A), \text{Emb}(B), \text{Emb}(C))$$
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="vista vista-2">
+                                    <h5>Vista 2 ($A''$ - Otras aristas borradas)</h5>
+                                    <div class="vista-content">
+                                        <p><strong>Estado del grafo:</strong> Se borra la conexión al Item_C. Ahora Usuario_1 solo está conectado a {Item_A, Item_B}</p>
+                                        <p class="calculation">
+                                            <strong>Cálculo GNN:</strong><br>
+                                            El nuevo embedding del Usuario_1 ($e''$) será:<br>
+                                            $$e'' \approx \text{Promedio}(\text{Emb}(A), \text{Emb}(B))$$
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="result-box">
+                                <p>
+                                    <strong>Resultado:</strong> Numéricamente, $\text{Promedio}(A, B, C)$ es un vector diferente a $\text{Promedio}(A, B)$.
+                                    Por lo tanto, $e' \neq e''$.
+                                </p>
+                                <p class="analogy-connection">
+                                    <strong>Tu Analogía:</strong> Es exactamente tu "Sabotaje de Señales". Al borrar la arista a "Fundación",
+                                    ese ítem ya no participa en el "promedio" para calcular el embedding del usuario en esa vista.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Método 2: Aumentación de Features -->
+                <div class="method-deep-dive feature-method">
+                    <h3>🎧 Método 2: Aumentación de Features (Añadir Ruido)</h3>
+
+                    <div class="method-explanation">
+                        <p class="method-intro">
+                            Este método crea vistas sin tocar la estructura (la Matriz de Adyacencia $A$ se mantiene igual).
+                            En su lugar, altera la <strong>Matriz de Embeddings Inicial</strong> ($E^{(0)}$).
+                        </p>
+
+                        <div class="key-insight-box">
+                            <p>
+                                <strong>💡 Clave:</strong> Antes de empezar el proceso de GNN (de promediar vecinos), el modelo "ensucia"
+                                o "mueve" ligeramente la coordenada inicial de cada nodo. Añade un pequeño vector de ruido aleatorio a cada embedding.
+                            </p>
+                        </div>
+
+                        <div class="numerical-breakdown">
+                            <h4>📊 Desglose Numérico</h4>
+
+                            <div class="vista-container">
+                                <div class="vista vista-1">
+                                    <h5>Vista 1 ($E^{(0)'}$ - Con ruido aleatorio 1)</h5>
+                                    <div class="vista-content">
+                                        <p><strong>Proceso:</strong> Se toma el embedding inicial de cada ítem y se le suma un ruido pequeño:</p>
+                                        <ul class="noise-list">
+                                            <li>Item_A → Embedding(A) + Ruido_1</li>
+                                            <li>Item_B → Embedding(B) + Ruido_2</li>
+                                            <li>Item_C → Embedding(C) + Ruido_3</li>
+                                        </ul>
+                                        <p class="calculation">
+                                            <strong>Cálculo GNN:</strong><br>
+                                            El GNN usa la misma estructura (Usuario_1 conectado a {A, B, C}):<br>
+                                            $$e' \approx \text{Promedio}(\text{Emb}(A)+\text{Ruido}_1, \text{Emb}(B)+\text{Ruido}_2, \text{Emb}(C)+\text{Ruido}_3)$$
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="vista vista-2">
+                                    <h5>Vista 2 ($E^{(0)''}$ - Con ruido aleatorio 2)</h5>
+                                    <div class="vista-content">
+                                        <p><strong>Proceso:</strong> Se toma el embedding inicial de cada ítem y se le suma un ruido <em>diferente</em>:</p>
+                                        <ul class="noise-list">
+                                            <li>Item_A → Embedding(A) + Ruido_4</li>
+                                            <li>Item_B → Embedding(B) + Ruido_5</li>
+                                            <li>Item_C → Embedding(C) + Ruido_6</li>
+                                        </ul>
+                                        <p class="calculation">
+                                            <strong>Cálculo GNN:</strong><br>
+                                            El GNN usa la misma estructura (Usuario_1 conectado a {A, B, C}):<br>
+                                            $$e'' \approx \text{Promedio}(\text{Emb}(A)+\text{Ruido}_4, \text{Emb}(B)+\text{Ruido}_5, \text{Emb}(C)+\text{Ruido}_6)$$
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="result-box">
+                                <p>
+                                    <strong>Resultado:</strong> El promedio de los embeddings "ruidosos" de la Vista 1 es un vector diferente
+                                    al promedio de los embeddings "ruidosos" de la Vista 2. Por lo tanto, $e' \neq e''$.
+                                </p>
+                                <p class="analogy-connection">
+                                    <strong>Tu Analogía:</strong> Es exactamente tu "Confusión de Identidad". La estructura de amigos (vecinos) no cambia,
+                                    pero "empujas" (añades ruido) la posición de todos en el mapa antes de que empiecen a promediar sus posiciones.
+                                </p>
+                                <p class="warning-note">
+                                    <strong>⚠️ El Problema del "Talla Única":</strong> Como el "empujón" es del mismo $\epsilon$ (o escala de ruido) para todos,
+                                    los usuarios frágiles (Long Tail) se ven más afectados que los usuarios robustos (Power Users).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mechanism-conclusion">
+                    <p class="conclusion-text">
+                        Ahora que entendemos <strong>exactamente</strong> cómo funcionan estos métodos numéricamente,
+                        podemos investigar si estas "mentiras" son buenas o malas para el aprendizaje del modelo.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

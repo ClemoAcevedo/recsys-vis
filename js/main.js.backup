@@ -1,75 +1,4 @@
 // ========================================
-// Horizontal Slide Navigation System
-// ======================================== //
-
-function setupSlideNavigation() {
-    const slides = document.querySelectorAll('.slide');
-    const progressIndicator = document.getElementById('progress-indicator');
-    let currentSlide = 0;
-
-    // Create progress dots
-    slides.forEach((slide, index) => {
-        const dot = document.createElement('div');
-        dot.className = 'progress-dot';
-        if (index === 0) dot.classList.add('active');
-        
-        dot.addEventListener('click', () => {
-            slides[index].scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' });
-        });
-        
-        progressIndicator.appendChild(dot);
-    });
-
-    const dots = document.querySelectorAll('.progress-dot');
-
-    // Update active dot on scroll
-    const updateActiveDot = () => {
-        const scrollPosition = window.scrollX + window.innerWidth / 2;
-
-        slides.forEach((slide, index) => {
-            const rect = slide.getBoundingClientRect();
-            const slideLeft = window.scrollX + rect.left;
-            const slideRight = slideLeft + slide.offsetWidth;
-
-            if (scrollPosition >= slideLeft && scrollPosition < slideRight) {
-                if (currentSlide !== index) {
-                    currentSlide = index;
-                    dots.forEach(d => d.classList.remove('active'));
-                    dots[index].classList.add('active');
-                    window.dispatchEvent(new CustomEvent('slideChange', {
-                        detail: { index, element: slide }
-                    }));
-                }
-            }
-        });
-    };
-
-    window.addEventListener('scroll', updateActiveDot);
-
-    // Keyboard navigation - HORIZONTAL
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight' || e.key === ' ') {
-            e.preventDefault();
-            if (currentSlide < slides.length - 1) {
-                slides[currentSlide + 1].scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' });
-            }
-        } else if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            if (currentSlide > 0) {
-                slides[currentSlide - 1].scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' });
-            }
-        }
-    });
-
-    // Emit initial slide event after layout settles
-    if (slides.length > 0) {
-        window.dispatchEvent(new CustomEvent('slideChange', {
-            detail: { index: 0, element: slides[0] }
-        }));
-    }
-}
-
-// ========================================
 // Graph Visualization (Structure Augmentation)
 // Story-Based Approach: Shows how recommendation path breaks
 // ========================================
@@ -116,24 +45,23 @@ class GraphVisualization {
     }
 
     createStoryData() {
-        const userX = this.width * 0.28;
-        const itemX = this.width * 0.62;
+        // The story graph: User1 -> ItemA, ItemB; User2 -> ItemB, ItemC
+        // User1 can discover ItemC through collaborative filtering via User2
+        // Repositioned upward for better visibility
 
         this.nodes = [
-            { id: 'user1', type: 'user', label: 'Usuario 1\n(Tú)', x: userX, y: 110, labelPosition: 'belowStrict' },
-            { id: 'user2', type: 'user', label: 'Usuario 2\n(Similar)', x: userX, y: 220, labelPosition: 'belowStrict' },
-            { id: 'user3', type: 'user', label: 'Usuario 3\n(Fan Fundación)', x: userX, y: 340, labelPosition: 'belowStrict' },
-            { id: 'itemA', type: 'item', label: 'Ítem A\n"Dune"', x: itemX, y: 90, labelPosition: 'belowStrict' },
-            { id: 'itemB', type: 'item', label: 'Ítem B\n"Hyperion"', x: itemX, y: 220, labelPosition: 'belowStrict' },
-            { id: 'itemC', type: 'item', label: 'Ítem C\n"Fundación"', x: itemX, y: 360, labelPosition: 'belowStrict' }
+            { id: 'user1', type: 'user', label: 'Usuario 1\n(Tú)', x: 120, y: 130 },
+            { id: 'user2', type: 'user', label: 'Usuario 2\n(Similar)', x: 120, y: 230 },
+            { id: 'itemA', type: 'item', label: 'Ítem A\n"Dune"', x: 300, y: 60 },
+            { id: 'itemB', type: 'item', label: 'Ítem B\n"Hyperion"', x: 300, y: 180 },
+            { id: 'itemC', type: 'item', label: 'Ítem C\n"Fundación"', x: 300, y: 300 }
         ];
 
         this.links = [
             { id: 'link1', source: 'user1', target: 'itemA', label: 'Leíste', removed: false },
             { id: 'link2', source: 'user1', target: 'itemB', label: 'Leíste', removed: false },
             { id: 'link3', source: 'user2', target: 'itemB', label: 'También leyó', removed: false },
-            { id: 'link4', source: 'user2', target: 'itemC', label: 'También leyó', removed: false, critical: true },
-            { id: 'link5', source: 'user3', target: 'itemC', label: 'Fan declarado', removed: false }
+            { id: 'link4', source: 'user2', target: 'itemC', label: 'También leyó', removed: false, critical: true }
         ];
 
         // The recommendation path: user1 -> itemB -> user2 -> itemC
@@ -221,33 +149,10 @@ class GraphVisualization {
 
             // Add label below node
             const lines = d.label.split('\n');
-            const lineSpacing = 14;
-            const position = d.labelPosition || 'below';
-            let baseOffset;
-
-            switch (position) {
-                case 'above':
-                    baseOffset = -(lineSpacing * lines.length) - 6;
-                    break;
-                case 'center':
-                    baseOffset = -((lineSpacing * (lines.length - 1)) / 2);
-                    break;
-                case 'belowStrict':
-                    baseOffset = 35;
-                    break;
-                case 'below':
-                default:
-                    baseOffset = 35;
-                    if (d.y > this.height - 110) {
-                        baseOffset = -(lineSpacing * (lines.length - 1) + 26);
-                    }
-                    break;
-            }
-
             lines.forEach((line, idx) => {
                 g.append('text')
                     .attr('class', 'node-label')
-                    .attr('y', baseOffset + idx * lineSpacing)
+                    .attr('y', 35 + idx * 14)
                     .attr('text-anchor', 'middle')
                     .attr('fill', '#2d3748')
                     .attr('font-size', '11px')
@@ -326,7 +231,7 @@ class GraphVisualization {
             // Add recommendation label
             const itemC = this.nodes.find(n => n.id === 'itemC');
             this.pathGroup.append('text')
-                .attr('x', itemC.x + 45)
+                .attr('x', itemC.x + 65)
                 .attr('y', itemC.y)
                 .attr('text-anchor', 'start')
                 .attr('fill', '#10b981')
@@ -715,83 +620,44 @@ class ScatterPlotVisualization {
                 id: 'power_user',
                 type: 'head',
                 label: 'Power User',
-                baseX: 25,
-                baseY: 50,
+                x: 25,  // Deep in Sci-Fi zone
+                y: 50,
                 r: 14,
-                originalZone: 'scifi',
-                curve: {
-                    control1: { x: 33, y: 44 },
-                    control2: { x: 38, y: 38 },
-                    target: { x: 40, y: 42 }
-                },
-                wobble: { x: 1.2, y: 1 },
-                phase: Math.PI / 3
+                originalZone: 'scifi'
             },
             {
                 id: 'longtail_user',
                 type: 'tail',
                 label: 'Usuario Long Tail',
-                baseX: 38,
-                baseY: 52,
+                x: 45,  // Near boundary
+                y: 50,
                 r: 7,
-                originalZone: 'scifi',
-                curve: {
-                    control1: { x: 50, y: 42 },
-                    control2: { x: 68, y: 65 },
-                    target: { x: 80, y: 58 }
-                },
-                wobble: { x: 2.6, y: 1.8 },
-                phase: Math.PI * 0.15
+                originalZone: 'scifi'
             },
             // Background points for context
-            { id: 'bg1', type: 'background', baseX: 20, baseY: 30, r: 4, curve: { control1: { x: 23, y: 25 }, control2: { x: 27, y: 22 }, target: { x: 29, y: 24 } }, wobble: { x: 1, y: 1.5 }, phase: Math.PI * 0.4 },
-            { id: 'bg2', type: 'background', baseX: 30, baseY: 70, r: 4, curve: { control1: { x: 34, y: 72 }, control2: { x: 40, y: 74 }, target: { x: 42, y: 68 } }, wobble: { x: 0.8, y: 1 }, phase: Math.PI * 0.9 },
-            { id: 'bg3', type: 'background', baseX: 35, baseY: 40, r: 4, curve: { control1: { x: 33, y: 45 }, control2: { x: 30, y: 50 }, target: { x: 32, y: 48 } }, wobble: { x: 0.9, y: 1.4 }, phase: Math.PI * 1.3 },
-            { id: 'bg4', type: 'background', baseX: 65, baseY: 50, r: 4, curve: { control1: { x: 68, y: 46 }, control2: { x: 72, y: 48 }, target: { x: 74, y: 45 } }, wobble: { x: 1.2, y: 1 }, phase: Math.PI * 0.6 },
-            { id: 'bg5', type: 'background', baseX: 70, baseY: 35, r: 4, curve: { control1: { x: 74, y: 37 }, control2: { x: 78, y: 39 }, target: { x: 80, y: 36 } }, wobble: { x: 0.7, y: 1.1 }, phase: Math.PI * 0.2 },
-            { id: 'bg6', type: 'background', baseX: 80, baseY: 65, r: 4, curve: { control1: { x: 77, y: 67 }, control2: { x: 72, y: 70 }, target: { x: 74, y: 68 } }, wobble: { x: 1, y: 1.3 }, phase: Math.PI * 1.6 }
+            { id: 'bg1', type: 'background', x: 20, y: 30, r: 4 },
+            { id: 'bg2', type: 'background', x: 30, y: 70, r: 4 },
+            { id: 'bg3', type: 'background', x: 35, y: 40, r: 4 },
+            { id: 'bg4', type: 'background', x: 65, y: 50, r: 4 },
+            { id: 'bg5', type: 'background', x: 70, y: 35, r: 4 },
+            { id: 'bg6', type: 'background', x: 80, y: 65, r: 4 }
         ];
-
-        // Mirror base positions for legacy references
-        this.points = this.points.map(p => ({
-            ...p,
-            x: p.baseX,
-            y: p.baseY
-        }));
     }
 
     render(noiseLevel = 0) {
-        // Calculate noisy positions with deterministic drifts
-        const noiseFactor = noiseLevel / 100;
-        const easedFactor = Math.pow(noiseFactor, 1.3);
-        const smoothstep = easedFactor * easedFactor * (3 - 2 * easedFactor);
-        const bezier = (p0, p1, p2, p3, t) => {
-            const u = 1 - t;
-            return u * u * u * p0 +
-                3 * u * u * t * p1 +
-                3 * u * t * t * p2 +
-                t * t * t * p3;
-        };
-
+        // Calculate noisy positions
         const points = this.points.map(p => {
-            const baseX = p.baseX ?? p.x;
-            const baseY = p.baseY ?? p.y;
-            const curve = p.curve || {
-                control1: { x: baseX + (p.driftX ?? 10), y: baseY + (p.driftY ?? 5) * 0.5 },
-                control2: { x: baseX + (p.driftX ?? 10) * 0.6, y: baseY + (p.driftY ?? 5) },
-                target: { x: baseX + (p.driftX ?? 10), y: baseY + (p.driftY ?? 5) }
-            };
+            if (noiseLevel === 0) {
+                return { ...p, currentX: p.x, currentY: p.y, currentZone: p.originalZone };
+            }
 
-            const wobbleAmp = p.wobble || { x: 0, y: 0 };
-            const phase = p.phase ?? 0;
-            const wobbleX = Math.sin(phase + noiseFactor * Math.PI * 2.5) * wobbleAmp.x * noiseFactor;
-            const wobbleY = Math.cos(phase + noiseFactor * Math.PI * 2.1) * wobbleAmp.y * noiseFactor;
+            // Add noise proportional to slider value (same magnitude for all)
+            const maxNoise = noiseLevel / 100 * 25; // Max 25 units of displacement
+            const angle = Math.random() * 2 * Math.PI;
+            const distance = Math.random() * maxNoise;
 
-            const bezierX = bezier(baseX, curve.control1.x, curve.control2.x, curve.target.x, smoothstep);
-            const bezierY = bezier(baseY, curve.control1.y, curve.control2.y, curve.target.y, smoothstep);
-
-            const newX = Math.max(0, Math.min(100, bezierX + wobbleX));
-            const newY = Math.max(0, Math.min(100, bezierY + wobbleY));
+            const newX = Math.max(0, Math.min(100, p.x + Math.cos(angle) * distance));
+            const newY = Math.max(0, Math.min(100, p.y + Math.sin(angle) * distance));
 
             // Determine current zone
             let currentZone = null;
@@ -801,8 +667,6 @@ class ScatterPlotVisualization {
 
             return {
                 ...p,
-                baseX,
-                baseY,
                 currentX: newX,
                 currentY: newY,
                 currentZone: currentZone
@@ -902,18 +766,10 @@ class MatrixVisualization {
         this.container = document.getElementById(containerId);
         this.width = this.container.clientWidth;
         this.height = this.container.clientHeight;
-        this.gridSize = 20; // 20x20 grid to enfatize sparsity (~1%)
-        this.cellSize = Math.min(this.width, this.height) / (this.gridSize + 3);
+        this.gridSize = 10; // 10x10 grid
+        this.cellSize = Math.min(this.width, this.height) / (this.gridSize + 2);
 
         this.initializeMatrix();
-        this.setupSlideListener();
-
-        // If the slide is visible on load (e.g., refresh mid-presentation), run the animation once.
-        setTimeout(() => {
-            if (this.isSlideInViewport()) {
-                this.animateObservedCells();
-            }
-        }, 300);
     }
 
     initializeMatrix() {
@@ -925,13 +781,14 @@ class MatrixVisualization {
         // Create grid data
         this.cells = [];
         const observed = [
-            [1, 4], [3, 12], [6, 2], [9, 18], [12, 7]
+            [0, 2], [1, 5], [2, 1], [3, 7], [4, 3],
+            [5, 9], [6, 4], [7, 0], [8, 6], [9, 8]
         ];
 
         // Calculate offset to center the grid
-        this.gridTotalSize = this.gridSize * this.cellSize;
-        this.offsetX = (this.width - this.gridTotalSize) / 2;
-        this.offsetY = (this.height - this.gridTotalSize) / 2;
+        const gridTotalSize = this.gridSize * this.cellSize;
+        this.offsetX = (this.width - gridTotalSize) / 2;
+        this.offsetY = (this.height - gridTotalSize) / 2;
 
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
@@ -952,7 +809,7 @@ class MatrixVisualization {
     render() {
         const cellGroup = this.svg.append('g');
 
-        this.cellsSelection = cellGroup.selectAll('rect')
+        cellGroup.selectAll('rect')
             .data(this.cells)
             .enter()
             .append('rect')
@@ -960,7 +817,7 @@ class MatrixVisualization {
             .attr('y', d => d.y)
             .attr('width', this.cellSize - 2)
             .attr('height', this.cellSize - 2)
-            .attr('fill', '#e2e8f0')
+            .attr('fill', d => d.observed ? '#667eea' : '#e2e8f0')
             .attr('stroke', '#cbd5e0')
             .attr('stroke-width', 1)
             .attr('rx', 2)
@@ -986,13 +843,10 @@ class MatrixVisualization {
                 }
             });
 
-        this.observedCells = this.cellsSelection.filter(d => d.observed);
-        this.resetObservedCells();
-
         // Add axis labels
         this.svg.append('text')
-            .attr('x', this.offsetX + this.gridTotalSize / 2)
-            .attr('y', this.offsetY + this.gridTotalSize + 16)
+            .attr('x', this.width / 2)
+            .attr('y', this.height - 5)
             .attr('text-anchor', 'middle')
             .attr('font-size', '12px')
             .attr('fill', '#4a5568')
@@ -1000,51 +854,14 @@ class MatrixVisualization {
             .text('Ítems (Películas)');
 
         this.svg.append('text')
+            .attr('x', -this.height / 2)
+            .attr('y', 15)
             .attr('text-anchor', 'middle')
             .attr('font-size', '12px')
             .attr('fill', '#4a5568')
             .attr('font-weight', 'bold')
-            .attr('transform', `translate(${this.offsetX - 26}, ${this.offsetY + this.gridTotalSize / 2}) rotate(-90)`)
+            .attr('transform', 'rotate(-90)')
             .text('Usuarios');
-    }
-
-    resetObservedCells() {
-        if (!this.observedCells) return;
-        this.observedCells
-            .interrupt()
-            .attr('fill', '#e2e8f0')
-            .attr('stroke', '#cbd5e0')
-            .attr('stroke-width', 1);
-    }
-
-    animateObservedCells() {
-        if (!this.observedCells) return;
-        this.resetObservedCells();
-        this.observedCells
-            .transition()
-            .delay((d, i) => 300 + i * 200)
-            .duration(450)
-            .attr('fill', '#667eea')
-            .attr('stroke', '#5a67d8')
-            .attr('stroke-width', 2);
-    }
-
-    setupSlideListener() {
-        const handler = (event) => {
-            const slideEl = event.detail?.element;
-            if (slideEl && slideEl.contains(this.container)) {
-                this.animateObservedCells();
-            }
-        };
-        window.addEventListener('slideChange', handler);
-        this.slideChangeHandler = handler;
-    }
-
-    isSlideInViewport() {
-        const slide = this.container.closest('.slide');
-        if (!slide) return false;
-        const rect = slide.getBoundingClientRect();
-        return rect.left >= 0 && rect.left < window.innerWidth;
     }
 }
 
@@ -1139,20 +956,13 @@ class AugmentationVisualization {
                     .attr('stroke-width', 2);
             }
 
-            const labelLines = node.label.split('\n');
-            const textElement = nodeGroup.append('text')
+            nodeGroup.append('text')
                 .attr('text-anchor', 'middle')
+                .attr('dy', 4)
                 .attr('font-size', '11px')
                 .attr('font-weight', 'bold')
                 .attr('fill', 'white')
-                .attr('y', labelLines.length > 1 ? -(labelLines.length - 1) * 6 : 4);
-
-            labelLines.forEach((line, idx) => {
-                textElement.append('tspan')
-                    .attr('x', 0)
-                    .attr('dy', idx === 0 ? 0 : 12)
-                    .text(line);
-            });
+                .text(node.label);
         });
     }
 
@@ -1353,7 +1163,7 @@ class AlexPhotosVisualization {
         ];
 
         this.photoWidth = 100;
-        this.photoHeight = 118;
+        this.photoHeight = 130;
         this.gap = 30;
 
         this.render();
@@ -1365,7 +1175,7 @@ class AlexPhotosVisualization {
         const svg = d3.select(`#${this.containerId}`)
             .append('svg')
             .attr('width', '100%')
-            .attr('height', 200);
+            .attr('height', 220);
 
         const totalWidth = this.photos.length * this.photoWidth + (this.photos.length - 1) * this.gap;
         this.startX = (containerWidth - totalWidth) / 2;
@@ -1405,7 +1215,7 @@ class AlexPhotosVisualization {
                 // Add a subtle spotlight circle
                 photoGroup.append('circle')
                     .attr('cx', x + this.photoWidth / 2)
-                    .attr('cy', 70)
+                    .attr('cy', 75)
                     .attr('r', 35)
                     .attr('fill', 'rgba(255, 255, 255, 0.15)');
             } else if (photo.type === 'glasses') {
@@ -1439,7 +1249,7 @@ class AlexPhotosVisualization {
 
             // Face representation (simple emoji-style)
             const faceX = x + this.photoWidth / 2;
-            const faceY = 70;
+            const faceY = 75;
 
             if (photo.type === 'mustache') {
                 // Normal front view with mustache
@@ -1612,36 +1422,60 @@ class AlexPhotosVisualization {
 // Scroll Reveal: Show sections only when scrolled into view
 // ========================================
 
-// Scroll reveal function - not needed for horizontal slides mode
-// function setupScrollReveal() {
-//     const sections = document.querySelectorAll('.problem-demo, .solution-demo, .key-insight, .question-section, .suspect, .transition');
-//     const observerOptions = {
-//         root: null,
-//         rootMargin: '0px',
-//         threshold: 0.2
-//     };
-//     const observer = new IntersectionObserver((entries) => {
-//         entries.forEach(entry => {
-//             if (entry.isIntersecting) {
-//                 entry.target.classList.add('visible');
-//             }
-//         });
-//     }, observerOptions);
-//     sections.forEach(section => {
-//         observer.observe(section);
-//     });
-// }
+function setupScrollReveal() {
+    const sections = document.querySelectorAll('.problem-demo, .solution-demo, .key-insight, .question-section, .suspect, .transition');
+
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.2 // Trigger when 20% of the section is visible
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, observerOptions);
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+}
 
 // ========================================
 // Initialize Visualizations
 // ========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Setup horizontal slide navigation
-    setupSlideNavigation();
+    // Setup scroll reveal for sections
+    setupScrollReveal();
 
     // Initialize Matrix Visualization (sparse data problem)
     const matrixViz = new MatrixVisualization('matrix-viz');
+
+    // Initialize Augmentation Visualization (contrastive learning)
+    const augmentationViz = new AugmentationVisualization('augmentation-viz');
+
+    const btnShowAugmentation = document.getElementById('btn-show-augmentation');
+    const btnResetAugmentation = document.getElementById('btn-reset-augmentation');
+
+    btnShowAugmentation.addEventListener('click', () => {
+        btnShowAugmentation.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            btnShowAugmentation.style.transform = 'scale(1)';
+        }, 100);
+        augmentationViz.showAugmentedViews();
+    });
+
+    btnResetAugmentation.addEventListener('click', () => {
+        btnResetAugmentation.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            btnResetAugmentation.style.transform = 'scale(1)';
+        }, 100);
+        augmentationViz.reset();
+    });
 
     // Initialize Alex Photos Visualization (essence learning)
     const alexPhotosViz = new AlexPhotosVisualization('alex-photos');
@@ -1694,47 +1528,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add event listener for noise slider
     const noiseSlider = document.getElementById('noise-slider');
     const noiseValue = document.getElementById('noise-value');
-    const noiseDecrease = document.getElementById('noise-decrease');
-    const noiseIncrease = document.getElementById('noise-increase');
-
-    const sliderMin = parseInt(noiseSlider.min, 10);
-    const sliderMax = parseInt(noiseSlider.max, 10);
-
-    const refreshNoiseButtons = () => {
-        if (!noiseDecrease || !noiseIncrease) return;
-        const current = parseInt(noiseSlider.value, 10);
-        noiseDecrease.disabled = current <= sliderMin;
-        noiseIncrease.disabled = current >= sliderMax;
-    };
-
-    const updateNoise = (value) => {
-        const clamped = Math.max(sliderMin, Math.min(sliderMax, value));
-        noiseSlider.value = clamped.toString();
-        noiseValue.textContent = clamped.toString();
-        scatterViz.updateNoise(clamped);
-        refreshNoiseButtons();
-    };
 
     noiseSlider.addEventListener('input', (e) => {
-        updateNoise(parseInt(e.target.value, 10));
+        const value = e.target.value;
+        noiseValue.textContent = value;
+        scatterViz.updateNoise(parseInt(value));
     });
-
-    if (noiseDecrease && noiseIncrease) {
-        const handleAdjust = (delta, button) => {
-            if (button.disabled) return;
-            const current = parseInt(noiseSlider.value, 10);
-            const target = current + delta;
-            const clamped = Math.max(sliderMin, Math.min(sliderMax, target));
-            if (clamped === current) return;
-            button.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                button.style.transform = 'scale(1)';
-            }, 120);
-            updateNoise(clamped);
-        };
-
-        noiseDecrease.addEventListener('click', () => handleAdjust(-5, noiseDecrease));
-        noiseIncrease.addEventListener('click', () => handleAdjust(5, noiseIncrease));
-        refreshNoiseButtons();
-    }
 });
