@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acto 1: El Dilema de las Vistas Imperfectas</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <!-- Progress Indicator -->
@@ -146,69 +148,94 @@
             <div class="slide-center">
                 <h2 class="slide-title">El Motor: InfoNCE</h2>
 
-                <div class="infonce-card">
-                    <p>
-                        El corazón del entrenamiento contrastivo es <strong>InfoNCE</strong>:
-                        compara múltiples vistas del mismo nodo y refuerza lo que permanece estable.
-                    </p>
+                <div class="infonce-intro-box">
+                    <p><strong>Optimización:</strong> Descenso de gradiente sobre <span class="tech-term">θ<sub>GNN</sub></span> (parámetros de la red) para minimizar L<sub>InfoNCE</sub>.</p>
+                    <p><strong>Resultado:</strong> Los embeddings <strong>z</strong> que genera la GNN convergen al espacio deseado.</p>
                 </div>
 
-                <div class="infonce-points">
-                    <div class="infonce-point">
-                        <span class="point-icon">🧲</span>
-                        <p><strong>Atrae positivos:</strong> aproxima representaciones del mismo usuario-ítem en vistas distintas.</p>
-                    </div>
-                    <div class="infonce-point">
-                        <span class="point-icon">🚫</span>
-                        <p><strong>Repele negativos:</strong> empuja lejos los nodos que no comparten identidad.</p>
-                    </div>
-                    <div class="infonce-point">
-                        <span class="point-icon">🧪</span>
-                        <p>Funciona <strong>solo si</strong> las vistas conservan la esencia. Por eso necesitamos "mentiras buenas".</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ========================================
-             SLIDE 5: Conexión con Recomendadores
-             ======================================== -->
-        <section class="slide slide-5" data-slide="5">
-            <div class="slide-center">
-                <h2 class="slide-title">🔗 Conexión con Sistemas Recomendadores</h2>
-
-                <div class="connection-cards">
-                    <div class="connection-card">
-                        <div class="card-icon">📊</div>
-                        <h3>Aumento de Estructura</h3>
-                        <p>
-                            Eliminar aristas es como ver a Alex de perfil: a veces es una "mentira buena".
-                            <strong>Pero cuando rompe caminos críticos</strong>, es como borrarle la nariz a Alex.
-                            ¿Sigue siendo él?
-                        </p>
+                <div class="infonce-section">
+                    <div class="infonce-equation">
+                        <h3 class="infonce-subtitle">La Función de Pérdida</h3>
+                        <div class="formula-intuitive">
+                            <div
+                                class="formula-render"
+                                data-katex="L_{\text{InfoNCE}} = -\log \frac{\operatorname{sim}(z'_i, z''_i)}{\operatorname{sim}(z'_i, z''_i) + \sum_{j \neq i} \operatorname{sim}(z'_i, z''_j)}"
+                            >
+                                L<sub>InfoNCE</sub> = -log [ sim(z'<sub>i</sub>, z''<sub>i</sub>) / ( sim(z'<sub>i</sub>, z''<sub>i</sub>) + Σ<sub>j≠i</sub> sim(z'<sub>i</sub>, z''<sub>j</sub>) ) ]
+                            </div>
+                        </div>
+                        <div class="formula-context">
+                            <p class="context-note"><strong>z'<sub>i</sub>, z''<sub>i</sub></strong> = embeddings del nodo i desde dos vistas aumentadas (par positivo)</p>
+                            <p class="context-note"><strong>z''<sub>j</sub></strong> (j≠i) = embeddings de otros nodos en el batch (pares negativos)</p>
+                        </div>
+                        <div class="gradient-context">
+                            <p class="gradient-note"><strong>Proceso iterativo:</strong> θ<sub>GNN</sub> ← θ<sub>GNN</sub> - α · ∇<sub>θ</sub>L<sub>InfoNCE</sub></p>
+                            <p class="gradient-explanation">
+                                El gradiente ajusta los pesos de la GNN para que genere embeddings donde:
+                                <br>• <span class="positive-effect">Pares positivos → cercanos</span>
+                                <br>• <span class="negative-effect">Pares negativos → alejados</span>
+                            </p>
+                        </div>
                     </div>
 
-                    <div class="connection-card">
-                        <div class="card-icon">🎭</div>
-                        <h3>Aumento de Features</h3>
-                        <p>
-                            Añadir ruido es como desenfocar la foto. Para el <strong>Power User</strong> (foto nítida),
-                            un poco de desenfoque no importa. Para el <strong>Usuario Long Tail</strong> (foto ya borrosa),
-                            el mismo desenfoque lo hace irreconocible.
-                        </p>
+                    <div class="infonce-playground">
+                        <h3 class="infonce-subtitle">Convergencia Iterativa (Simplificado a 2D)</h3>
+                        <div class="iteration-counter">
+                            Iteración: <span id="iteration-count">0</span> / 50
+                        </div>
+                        <div id="infonce-space" class="visualization-container infonce-space">
+                            <div
+                                class="infonce-node anchor"
+                                data-role="anchor"
+                                data-label="z'_i"
+                                data-initial-x="0"
+                                data-initial-y="0"
+                                data-target-x="0"
+                                data-target-y="0"
+                            ></div>
+                            <div
+                                class="infonce-node positive"
+                                data-role="positive"
+                                data-label="z''_i"
+                                data-initial-x="140"
+                                data-initial-y="-120"
+                                data-target-x="8"
+                                data-target-y="-12"
+                            ></div>
+                            <div
+                                class="infonce-node negative"
+                                data-role="negative"
+                                data-label="z''_j₁"
+                                data-initial-x="30"
+                                data-initial-y="-20"
+                                data-target-x="170"
+                                data-target-y="-140"
+                            ></div>
+                            <div
+                                class="infonce-node negative"
+                                data-role="negative"
+                                data-label="z''_j₂"
+                                data-initial-x="-40"
+                                data-initial-y="15"
+                                data-target-x="-170"
+                                data-target-y="50"
+                            ></div>
+                            <div
+                                class="infonce-node negative"
+                                data-role="negative"
+                                data-label="z''_j₃"
+                                data-initial-x="10"
+                                data-initial-y="60"
+                                data-target-x="120"
+                                data-target-y="150"
+                            ></div>
+                        </div>
+                        <div class="infonce-controls">
+                            <p class="infonce-annotation">
+                                La animación muestra <strong>optimización gradual</strong>: en cada iteración, el gradiente ∇<sub>θ</sub>L empuja los embeddings hacia su configuración óptima.
+                            </p>
+                        </div>
                     </div>
-                </div>
-
-                <div class="infonce-highlight">
-                    <p>
-                        <strong>El motor:</strong> <strong>InfoNCE</strong> — atrae positivos (vistas del mismo nodo),
-                        repele negativos (vistas de otros nodos).
-                    </p>
-                </div>
-
-                <div class="critical-question">
-                    <strong>La pregunta crítica:</strong> ¿Nuestros métodos crean "mentiras buenas"
-                    o "mentiras malas" que sabotean el modelo?
                 </div>
             </div>
         </section>

@@ -1609,6 +1609,150 @@ class AlexPhotosVisualization {
 }
 
 // ========================================
+// InfoNCE Playground (Gradual Convergence Animation)
+// ========================================
+
+class InfoNCEPlayground {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        if (!this.container) return;
+
+        this.iterationCounter = document.getElementById('iteration-count');
+        this.nodes = Array.from(this.container.querySelectorAll('.infonce-node'));
+        this.positions = new Map();
+
+        // Animation parameters
+        this.currentIteration = 0;
+        this.maxIterations = 50;
+        this.iterationDelay = 120; // ms between iterations
+        this.isRunning = false;
+        this.animationTimer = null;
+        this.pauseDelay = 2000; // pause at end before restart
+
+        this.nodes.forEach((node) => {
+            const initial = this.getPosition(node, 'initial');
+            const target = this.getPosition(node, 'target');
+            this.positions.set(node, { initial, target });
+        });
+
+        this.resetPositions(false);
+        this.startGradualOptimization();
+    }
+
+    getPosition(node, type) {
+        const keyX = `${type}X`;
+        const keyY = `${type}Y`;
+        const x = parseFloat(node.dataset[keyX]);
+        const y = parseFloat(node.dataset[keyY]);
+        return {
+            x: Number.isFinite(x) ? x : 0,
+            y: Number.isFinite(y) ? y : 0
+        };
+    }
+
+    setNodePosition(node, position) {
+        if (!node || !position) return;
+        node.style.setProperty('--x', `${position.x}px`);
+        node.style.setProperty('--y', `${position.y}px`);
+    }
+
+    // Interpolate between initial and target based on progress (0 to 1)
+    interpolatePosition(initial, target, progress) {
+        // Use easing function for smooth convergence
+        const eased = this.easeInOutCubic(progress);
+        return {
+            x: initial.x + (target.x - initial.x) * eased,
+            y: initial.y + (target.y - initial.y) * eased
+        };
+    }
+
+    easeInOutCubic(t) {
+        return t < 0.5
+            ? 4 * t * t * t
+            : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    updateIteration() {
+        const progress = this.currentIteration / this.maxIterations;
+
+        // Update node positions based on current iteration
+        this.positions.forEach(({ initial, target }, node) => {
+            const currentPos = this.interpolatePosition(initial, target, progress);
+            this.setNodePosition(node, currentPos);
+        });
+
+        // Update counter
+        if (this.iterationCounter) {
+            this.iterationCounter.textContent = this.currentIteration;
+        }
+
+        // Update visual state
+        if (progress > 0.3) {
+            this.container.classList.add('infonce-applied');
+        } else {
+            this.container.classList.remove('infonce-applied');
+        }
+    }
+
+    resetPositions(shouldAnimate = true) {
+        if (!shouldAnimate) {
+            this.nodes.forEach((node) => {
+                node.style.transition = 'none';
+            });
+        }
+
+        this.currentIteration = 0;
+        this.positions.forEach(({ initial }, node) => {
+            this.setNodePosition(node, initial);
+        });
+
+        if (!shouldAnimate) {
+            void this.container.offsetHeight;
+            this.nodes.forEach((node) => {
+                node.style.transition = '';
+            });
+        }
+
+        this.container.classList.remove('infonce-applied');
+
+        if (this.iterationCounter) {
+            this.iterationCounter.textContent = '0';
+        }
+    }
+
+    async startGradualOptimization() {
+        if (this.isRunning) return;
+        this.isRunning = true;
+
+        while (this.isRunning) {
+            // Optimization phase: iterate from 0 to max
+            for (let i = 0; i <= this.maxIterations; i++) {
+                if (!this.isRunning) break;
+
+                this.currentIteration = i;
+                this.updateIteration();
+
+                await new Promise(resolve => setTimeout(resolve, this.iterationDelay));
+            }
+
+            // Pause at convergence
+            await new Promise(resolve => setTimeout(resolve, this.pauseDelay));
+
+            // Reset to initial positions
+            this.resetPositions(true);
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationTimer) {
+            clearTimeout(this.animationTimer);
+        }
+    }
+}
+
+// ========================================
 // Scroll Reveal: Show sections only when scrolled into view
 // ========================================
 
@@ -1640,11 +1784,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup horizontal slide navigation
     setupSlideNavigation();
 
+    // Render formulas with KaTeX when available
+    if (window.katex) {
+        document.querySelectorAll('[data-katex]').forEach((element) => {
+            const tex = element.dataset.katex;
+            if (!tex) return;
+            try {
+                window.katex.render(tex, element, {
+                    displayMode: true,
+                    throwOnError: false
+                });
+            } catch (error) {
+                // Fallback to plain text if rendering fails
+                element.textContent = tex;
+            }
+        });
+    }
+
     // Initialize Matrix Visualization (sparse data problem)
     const matrixViz = new MatrixVisualization('matrix-viz');
 
     // Initialize Alex Photos Visualization (essence learning)
     const alexPhotosViz = new AlexPhotosVisualization('alex-photos');
+
+    // Initialize InfoNCE Playground
+    new InfoNCEPlayground('infonce-space');
 
     const btnShowEssence = document.getElementById('btn-show-essence');
     const btnResetEssence = document.getElementById('btn-reset-essence');
